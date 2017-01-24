@@ -1771,5 +1771,21 @@
             </build>
         </profile>
         -->
+
+        <profile>
+            <id>ef-release</id>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>etown-nexus-snapshots</id>
+                    <name>Etown Nexus Snapshots</name>
+                    <url>https://nexus-bos.englishtown.com/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>etown-nexus-releases</id>
+                    <name>Etown Nexus Releases</name>
+                    <url>https://nexus-bos.englishtown.com/content/repositories/releases</url>
+                </repository>
+            </distributionManagement>
+        </profile>
     </profiles>
 </project>
