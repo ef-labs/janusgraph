@@ -64,7 +64,7 @@
     </scm>
     <properties>
         <janusgraph.compatible.versions />
-        <tinkerpop.version>3.1.1-incubating</tinkerpop.version>
+        <tinkerpop.version>3.2.3</tinkerpop.version>
         <junit.version>4.12</junit.version>
         <mrunit.version>1.1.0</mrunit.version>
         <cassandra.version>2.1.9</cassandra.version>
@@ -74,10 +74,10 @@
         <sesame.version>2.7.10</sesame.version>
         <slf4j.version>1.7.12</slf4j.version>
         <httpcomponents.version>4.4.1</httpcomponents.version>
-        <hadoop2.version>2.7.1</hadoop2.version>
+        <hadoop2.version>2.7.2</hadoop2.version>
         <hbase098.core.version>0.98.2</hbase098.core.version>
         <hbase098.version>${hbase098.core.version}-hadoop2</hbase098.version>
-        <hbase100.core.version>1.0.2</hbase100.core.version>
+        <hbase100.core.version>1.2.4</hbase100.core.version>
         <hbase100.version>${hbase100.core.version}</hbase100.version>
         <jackson1.version>1.9.2</jackson1.version>
         <jackson2.version>2.4.4</jackson2.version>
@@ -100,6 +100,7 @@
         <jna.version>4.0.0</jna.version>
         <kuali.s3.wagon.version>1.1.20</kuali.s3.wagon.version>
         <jasper.version>5.5.23</jasper.version>
+        <gmavenplus.version>1.5</gmavenplus.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <janusgraph.testdir>${project.build.directory}/janusgraph-test</janusgraph.testdir>
@@ -113,7 +114,6 @@
         <top.level.basedir>${basedir}</top.level.basedir>
         <compiler.source>1.8</compiler.source>
         <compiler.target>1.8</compiler.target>
-        <compiler.args />
         <test.excluded.groups>org.janusgraph.testcategory.MemoryTests,org.janusgraph.testcategory.PerformanceTests,org.janusgraph.testcategory.BrittleTests</test.excluded.groups>
     </properties>
     <modules>
@@ -219,10 +219,12 @@
                     <configuration>
                         <source>${compiler.source}</source>
                         <target>${compiler.target}</target>
-                        <compilerArgument>${compiler.args}</compilerArgument>
                         <compilerArguments>
                             <Xmaxerrs>500</Xmaxerrs>
                         </compilerArguments>
+                        <compilerArgs>
+                          <arg>-Xlint:unchecked</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -280,6 +282,7 @@
                                 </excludes> -->
                                 <skipTests>${test.skip.tp}</skipTests>
                                 <systemPropertyVariables>
+                                  <build.dir>${project.build.directory}</build.dir>
                                   <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration>
                                 </systemPropertyVariables>
                             </configuration>
@@ -1164,11 +1167,6 @@
 
             <dependencyManagement>
                 <dependencies>
-                    <dependency>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>curator-recipes</artifactId>
-                        <version>${hadoop2.version}</version>
-                    </dependency>
                     <dependency>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-annotations</artifactId>
