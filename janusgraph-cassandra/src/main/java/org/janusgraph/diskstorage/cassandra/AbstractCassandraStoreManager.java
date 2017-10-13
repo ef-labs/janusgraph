@@ -36,9 +36,6 @@ import static org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration.*;
 
 import org.apache.cassandra.dht.IPartitioner;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * @author Matthias Broecheler (me@matthiasb.com)
  */
@@ -62,14 +59,14 @@ public abstract class AbstractCassandraStoreManager extends DistributedStoreMana
     }
 
     //################### CASSANDRA SPECIFIC CONFIGURATION OPTIONS ######################
-
     public static final ConfigNamespace CASSANDRA_NS =
             new ConfigNamespace(GraphDatabaseConfiguration.STORAGE_NS, "cassandra", "Cassandra storage backend options");
 
     public static final ConfigOption<String> CASSANDRA_KEYSPACE =
             new ConfigOption<String>(CASSANDRA_NS, "keyspace",
-                    "The name of JanusGraph's keyspace.  It will be created if it does not exist.",
-                    ConfigOption.Type.LOCAL, "janusgraph");
+            "The name of JanusGraph's keyspace.  It will be created if it does not exist. " +
+                    "If it is not supplied, but graph.graphname is, then the the keyspace will be set to that.",
+            ConfigOption.Type.LOCAL, "janusgraph");
 
     // Consistency Levels and Atomic Batch
     public static final ConfigOption<String> CASSANDRA_READ_CONSISTENCY =
@@ -155,7 +152,7 @@ public abstract class AbstractCassandraStoreManager extends DistributedStoreMana
     // Thrift transport
     public static final ConfigOption<Integer> THRIFT_FRAME_SIZE_MB =
             new ConfigOption<>(CASSANDRA_NS, "frame-size-mb",
-            "The thrift frame size in megabytes", ConfigOption.Type.MASKABLE, 15);
+            "The thrift frame size in megabytes", ConfigOption.Type.MASKABLE, 15, (p -> p != null && p > 0 && p < 2048));
 
     /**
      * The default Thrift port used by Cassandra. Set
@@ -182,13 +179,10 @@ public abstract class AbstractCassandraStoreManager extends DistributedStoreMana
     private volatile StoreFeatures features = null;
     private Partitioner partitioner = null;
 
-    private static final Logger log =
-            LoggerFactory.getLogger(AbstractCassandraStoreManager.class);
-
     public AbstractCassandraStoreManager(Configuration config) {
         super(config, PORT_DEFAULT);
 
-        this.keySpaceName = config.get(CASSANDRA_KEYSPACE);
+        this.keySpaceName = determineKeyspaceName(config);
         this.compressionEnabled = config.get(CF_COMPRESSION);
         this.compressionChunkSizeKB = config.get(CF_COMPRESSION_BLOCK_SIZE);
         this.compressionClass = config.get(CF_COMPRESSION_TYPE);
@@ -278,6 +272,7 @@ public abstract class AbstractCassandraStoreManager extends DistributedStoreMana
             fb.batchMutation(true).distributed(true);
             fb.timestamps(true).cellTTL(true);
             fb.keyConsistent(global, local);
+            fb.optimisticLocking(true);
 
             boolean keyOrdered;
 
@@ -337,4 +332,9 @@ public abstract class AbstractCassandraStoreManager extends DistributedStoreMana
         return getClass().getSimpleName() + keySpaceName;
     }
 
+    // Opened up for testing purposes
+    protected String determineKeyspaceName(Configuration config) {
+        if ((!config.has(CASSANDRA_KEYSPACE) && (config.has(GRAPH_NAME)))) return config.get(GRAPH_NAME);
+        return config.get(CASSANDRA_KEYSPACE);
+    }
 }

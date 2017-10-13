@@ -14,16 +14,12 @@
 
 package org.janusgraph.graphdb.tinkerpop;
 
-import org.janusgraph.core.JanusGraphTransaction;
 import org.janusgraph.diskstorage.keycolumnvalue.StoreFeatures;
-import org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration;
 import org.janusgraph.graphdb.database.StandardJanusGraph;
 import org.janusgraph.graphdb.transaction.StandardJanusGraphTx;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.apache.tinkerpop.gremlin.structure.util.StringFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Blueprint's features of a JanusGraph.
@@ -32,10 +28,6 @@ import org.slf4j.LoggerFactory;
  */
 
 public class JanusGraphFeatures implements Graph.Features {
-
-    private static final Logger log =
-            LoggerFactory.getLogger(JanusGraphFeatures.class);
-
 
     private final GraphFeatures graphFeatures;
     private final VertexFeatures vertexFeatures;

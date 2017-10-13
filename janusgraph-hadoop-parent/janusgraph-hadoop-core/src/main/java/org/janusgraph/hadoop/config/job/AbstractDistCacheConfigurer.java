@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.janusgraph.diskstorage.configuration.ConfigOption;
-import org.janusgraph.hadoop.config.JanusGraphHadoopConfiguration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -101,7 +99,7 @@ public abstract class AbstractDistCacheConfigurer {
                     localPath, destPath, destFS);
         }
 
-        if (!fileStats.isRemoteCopyCurrent()) {
+        if (fileStats != null && !fileStats.isRemoteCopyCurrent()) {
             log.debug("Copying {} to {}", localPath, destPath);
             destFS.copyFromLocalFile(localPath, destPath);
             if (null != fileStats.local) {
@@ -148,8 +146,9 @@ public abstract class AbstractDistCacheConfigurer {
         for (String cpentry : classpath.split(File.pathSeparator)) {
             if (cpentry.toLowerCase().endsWith(".jar") || cpentry.toLowerCase().endsWith(".properties")) {
                 paths.add(new Path(cpentry));
-                if (cpentry.toLowerCase().endsWith(mrj));
+                if (cpentry.toLowerCase().endsWith(mrj)) {
                     mapredJarPath = cpentry;
+                }
             }
         }
         return new Conf(paths, mapredJarPath);

@@ -14,8 +14,6 @@
 
 package org.janusgraph.diskstorage.hbase;
 
-import java.util.Arrays;
-
 import org.apache.hadoop.hbase.util.VersionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +30,7 @@ public class HBaseCompatLoader {
         "org.janusgraph.diskstorage.hbase.HBaseCompat1_0";
 
     private static final String[] HBASE_SUPPORTED_VERSIONS =
-        new String[] { "0.98", "1.0", "1.1", "1.2" };
+        new String[] { "0.98", "1.0", "1.1", "1.2", "1.3" };
 
     private static HBaseCompat cachedCompat;
 

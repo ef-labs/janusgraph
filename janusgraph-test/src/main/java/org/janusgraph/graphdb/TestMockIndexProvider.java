@@ -14,16 +14,14 @@
 
 package org.janusgraph.graphdb;
 
-import com.google.common.base.Preconditions;
 import org.janusgraph.diskstorage.*;
 import org.janusgraph.diskstorage.configuration.ConfigOption;
 import org.janusgraph.diskstorage.configuration.Configuration;
 import org.janusgraph.diskstorage.indexing.*;
 import org.janusgraph.graphdb.query.JanusGraphPredicate;
-import org.apache.commons.lang.StringUtils;
-
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration.INDEX_BACKEND;
 import static org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration.INDEX_NS;
@@ -68,15 +66,20 @@ public class TestMockIndexProvider implements IndexProvider {
     }
 
     @Override
-    public List<String> query(IndexQuery query, KeyInformation.IndexRetriever informations, BaseTransaction tx) throws BackendException {
+    public Stream<String> query(IndexQuery query, KeyInformation.IndexRetriever informations, BaseTransaction tx) throws BackendException {
         return index.query(query,informations,tx);
     }
 
     @Override
-    public Iterable<RawQuery.Result<String>> query(RawQuery query, KeyInformation.IndexRetriever informations, BaseTransaction tx) throws BackendException {
+    public Stream<RawQuery.Result<String>> query(RawQuery query, KeyInformation.IndexRetriever informations, BaseTransaction tx) throws BackendException {
         return index.query(query,informations,tx);
     }
 
+    @Override
+    public Long totals(RawQuery query, KeyInformation.IndexRetriever informations, BaseTransaction tx) throws BackendException {
+        return index.totals(query,informations,tx);
+    }
+    
     @Override
     public BaseTransactionConfigurable beginTransaction(BaseTransactionConfig config) throws BackendException {
         return index.beginTransaction(config);
@@ -90,6 +93,11 @@ public class TestMockIndexProvider implements IndexProvider {
     @Override
     public void clearStorage() throws BackendException {
         index.clearStorage();
+    }
+
+    @Override
+    public boolean exists() throws BackendException {
+        return index.exists();
     }
 
     @Override
@@ -111,4 +119,5 @@ public class TestMockIndexProvider implements IndexProvider {
     public IndexFeatures getFeatures() {
         return index.getFeatures();
     }
+
 }

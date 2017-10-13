@@ -22,32 +22,21 @@ import com.google.common.collect.*;
 import org.janusgraph.core.*;
 import org.janusgraph.graphdb.database.idassigner.VertexIDAssigner;
 import org.janusgraph.graphdb.database.idassigner.placement.PropertyPlacementStrategy;
-import org.janusgraph.graphdb.internal.InternalVertex;
 import org.janusgraph.graphdb.olap.computer.FulgoraGraphComputer;
-import org.janusgraph.core.schema.VertexLabelMaker;
 import org.janusgraph.diskstorage.configuration.BasicConfiguration;
 import org.janusgraph.diskstorage.configuration.ModifiableConfiguration;
 import org.janusgraph.diskstorage.configuration.WriteConfiguration;
 import org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration;
-import org.janusgraph.graphdb.database.StandardJanusGraph;
 import org.janusgraph.graphdb.database.idassigner.placement.SimpleBulkPlacementStrategy;
 import org.janusgraph.graphdb.idmanagement.IDManager;
-import org.janusgraph.graphdb.transaction.StandardJanusGraphTx;
 import org.janusgraph.olap.OLAPTest;
-import org.janusgraph.testcategory.OrderedKeyStoreTests;
-import org.janusgraph.testcategory.UnorderedKeyStoreTests;
 import org.janusgraph.util.datastructures.AbstractLongListUtil;
 import org.apache.tinkerpop.gremlin.process.computer.ComputerResult;
-import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -60,9 +49,6 @@ import static org.junit.Assert.*;
  * @author Matthias Broecheler (me@matthiasb.com)
  */
 public abstract class JanusGraphPartitionGraphTest extends JanusGraphBaseTest {
-
-    private static final Logger log =
-            LoggerFactory.getLogger(JanusGraphPartitionGraphTest.class);
 
     final static Random random = new Random();
     final static int numPartitions = 8;
@@ -116,15 +102,15 @@ public abstract class JanusGraphPartitionGraphTest extends JanusGraphBaseTest {
         Object[] options = {option(GraphDatabaseConfiguration.IDS_FLUSH), false};
         clopen(options);
 
-        PropertyKey gid = makeVertexIndexedUniqueKey("gid", Integer.class);
-        PropertyKey sig = makeKey("sig", Integer.class);
-        PropertyKey name = mgmt.makePropertyKey("name").cardinality(Cardinality.LIST).dataType(String.class).make();
-        EdgeLabel knows = makeLabel("knows");
-        EdgeLabel base = makeLabel("base");
-        EdgeLabel one = mgmt.makeEdgeLabel("one").multiplicity(Multiplicity.ONE2ONE).make();
+        makeVertexIndexedUniqueKey("gid", Integer.class);
+        makeKey("sig", Integer.class);
+        mgmt.makePropertyKey("name").cardinality(Cardinality.LIST).dataType(String.class).make();
+        makeLabel("knows");
+        makeLabel("base");
+        mgmt.makeEdgeLabel("one").multiplicity(Multiplicity.ONE2ONE).make();
 
-        VertexLabel person = mgmt.makeVertexLabel("person").make();
-        VertexLabel group = mgmt.makeVertexLabel("group").partition().make();
+        mgmt.makeVertexLabel("person").make();
+        mgmt.makeVertexLabel("group").partition().make();
 
         finishSchema();
         final Set<String> names = ImmutableSet.of("Marko", "Dan", "Stephen", "Daniel", "Josh", "Thad", "Pavel", "Matthias");

@@ -24,7 +24,6 @@ import org.janusgraph.core.*;
 import org.janusgraph.core.attribute.Cmp;
 import org.janusgraph.core.schema.ConsistencyModifier;
 import org.janusgraph.core.schema.JanusGraphIndex;
-import org.janusgraph.diskstorage.Backend;
 import static org.janusgraph.diskstorage.Backend.*;
 import org.janusgraph.diskstorage.configuration.BasicConfiguration;
 import org.janusgraph.diskstorage.configuration.ModifiableConfiguration;
@@ -52,7 +51,6 @@ import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -71,7 +69,9 @@ public abstract class JanusGraphOperationCountingTest extends JanusGraphBaseTest
 
     public abstract WriteConfiguration getBaseConfiguration();
 
-    public abstract boolean storeUsesConsistentKeyLocker();
+    public final boolean storeUsesConsistentKeyLocker() {
+        return !this.features.hasLocking();
+    }
 
     @Override
     public WriteConfiguration getConfiguration() {
@@ -107,7 +107,7 @@ public abstract class JanusGraphOperationCountingTest extends JanusGraphBaseTest
         finishSchema();
 
         //Schema and relation id pools are tapped, Schema id pool twice because the renew is triggered. Each id acquisition requires 1 mutations and 2 reads
-        verifyStoreMetrics(ID_STORE_NAME, SYSTEM_METRICS, ImmutableMap.of(M_MUTATE, 3l, M_GET_SLICE, 6l));
+        verifyStoreMetrics(getConfig().get(IDS_STORE_NAME), SYSTEM_METRICS, ImmutableMap.of(M_MUTATE, 3l, M_GET_SLICE, 6l));
     }
 
 
@@ -261,7 +261,7 @@ public abstract class JanusGraphOperationCountingTest extends JanusGraphBaseTest
         verifyStoreMetrics(EDGESTORE_NAME, ImmutableMap.of(M_GET_SLICE, 2l));
         verifyStoreMetrics(INDEXSTORE_NAME);
         verifyStoreMetrics(METRICS_STOREMANAGER_NAME, ImmutableMap.of(M_MUTATE, 2l));
-        verifyStoreMetrics(ID_STORE_NAME);
+        verifyStoreMetrics(getConfig().get(IDS_STORE_NAME));
     }
 
 
@@ -434,15 +434,11 @@ public abstract class JanusGraphOperationCountingTest extends JanusGraphBaseTest
 //        assertEquals("On "+storeName+"-cache misses",misses, metric.getCounter(prefix, storeName + Backend.METRICS_CACHE_SUFFIX, CacheMetricsAction.MISS.getName()).getCount());
 //    }
 
-    public void printAllMetrics() {
-        printAllMetrics(metricsPrefix);
-    }
-
     public void printAllMetrics(String prefix) {
         List<String> storeNames = new ArrayList<>();
         storeNames.add(EDGESTORE_NAME);
         storeNames.add(INDEXSTORE_NAME);
-        storeNames.add(ID_STORE_NAME);
+        storeNames.add(getConfig().get(IDS_STORE_NAME));
         storeNames.add(METRICS_STOREMANAGER_NAME);
         if (storeUsesConsistentKeyLocker()) {
             storeNames.add(EDGESTORE_NAME+LOCK_STORE_SUFFIX);

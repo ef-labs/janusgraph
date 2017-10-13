@@ -16,7 +16,6 @@ package org.janusgraph.core;
 
 import org.janusgraph.core.schema.JanusGraphManagement;
 import org.janusgraph.graphdb.configuration.JanusGraphConstants;
-import org.apache.tinkerpop.gremlin.process.computer.GraphComputer;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.util.Gremlin;
 
@@ -56,6 +55,10 @@ import org.apache.tinkerpop.gremlin.util.Gremlin;
         test = "org.apache.tinkerpop.gremlin.structure.io.IoTest$GraphMLTest",
         method = "shouldReadGraphMLWithNoEdgeLabels",
         reason = "JanusGraph does not support default edge label (edge) used when GraphML is missing edge labels.")
+@Graph.OptOut(
+        test = "org.apache.tinkerpop.gremlin.structure.io.IoTest$GraphMLTest",
+        method = "shouldReadGraphMLWithoutEdgeIds",
+        reason = "JanusGraph does not support default edge label (edge) used when GraphML is missing edge ids.")
 @Graph.OptOut(
         test = "org.apache.tinkerpop.gremlin.process.computer.GraphComputerTest",
         method = "shouldSupportGraphFilter",

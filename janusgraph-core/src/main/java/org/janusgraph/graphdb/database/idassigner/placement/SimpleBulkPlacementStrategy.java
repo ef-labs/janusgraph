@@ -16,12 +16,8 @@ package org.janusgraph.graphdb.database.idassigner.placement;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.io.BaseEncoding;
-import org.janusgraph.diskstorage.StaticBuffer;
 import org.janusgraph.diskstorage.configuration.ConfigOption;
 import org.janusgraph.diskstorage.configuration.Configuration;
-import org.janusgraph.diskstorage.util.BufferUtil;
 import org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration;
 import org.janusgraph.graphdb.configuration.PreInitializeConfigOptions;
 import org.janusgraph.graphdb.database.idassigner.IDPoolExhaustedException;
@@ -125,11 +121,9 @@ public class SimpleBulkPlacementStrategy implements IDPlacementStrategy {
     @Override
     public void exhaustedPartition(int partitionID) {
         exhaustedPartitions.add(partitionID);
-        boolean found = false;
         for (int i = 0; i < currentPartitions.length; i++) {
             if (currentPartitions[i] == partitionID) {
                 updateElement(i);
-                found = true;
             }
         }
     }

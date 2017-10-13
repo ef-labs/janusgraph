@@ -17,13 +17,17 @@ package org.janusgraph.core.util;
 import com.google.common.base.Preconditions;
 import org.janusgraph.core.JanusGraph;
 
+import org.janusgraph.diskstorage.Backend;
 import org.janusgraph.diskstorage.util.BackendOperation;
 import org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration;
 import org.janusgraph.graphdb.database.StandardJanusGraph;
+import org.janusgraph.util.system.IOUtils;
+import org.janusgraph.diskstorage.BackendException;
+import org.janusgraph.diskstorage.Backend;
+import org.janusgraph.diskstorage.indexing.IndexProvider;
 
 import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Utility class containing methods that simplify JanusGraph clean-up processes.
@@ -39,7 +43,9 @@ public class JanusGraphCleanup {
      * @param graph
      * @throws IllegalArgumentException if the graph has not been shut down
      * @throws org.janusgraph.core.JanusGraphException if clearing the storage is unsuccessful
+     * @deprecated Use {@link org.janusgraph.core.JanusGraphFactory#drop(JanusGraph)}
      */
+    @Deprecated
     public static final void clear(JanusGraph graph) {
         Preconditions.checkNotNull(graph);
         Preconditions.checkArgument(graph instanceof StandardJanusGraph,"Invalid graph instance detected: %s",graph.getClass());
@@ -49,7 +55,19 @@ public class JanusGraphCleanup {
         BackendOperation.execute(new Callable<Boolean>(){
             @Override
             public Boolean call() throws Exception {
-                config.getBackend().clearStorage();
+                final Backend backend = config.getBackend();
+                try {
+                    backend.clearStorage();
+                } finally {
+                    IOUtils.closeQuietly(backend);
+                }
+                backend.getIndexInformation().forEach((name, index) -> {
+                    try {
+                        ((IndexProvider) index).clearStorage();
+                    } catch (BackendException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
                 return true;
             }
             @Override

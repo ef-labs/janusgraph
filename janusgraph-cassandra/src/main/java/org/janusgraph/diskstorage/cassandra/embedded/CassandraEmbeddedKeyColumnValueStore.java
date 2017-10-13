@@ -52,8 +52,6 @@ import javax.annotation.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-
 import static org.janusgraph.diskstorage.cassandra.CassandraTransaction.getTx;
 
 public class CassandraEmbeddedKeyColumnValueStore implements KeyColumnValueStore {
@@ -211,7 +209,7 @@ public class CassandraEmbeddedKeyColumnValueStore implements KeyColumnValueStore
 
     }
 
-    private class FilterDeletedColumns implements Predicate<Cell> {
+    private static class FilterDeletedColumns implements Predicate<Cell> {
 
         private final long tsMillis;
         private final int tsSeconds;

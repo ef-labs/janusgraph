@@ -18,7 +18,6 @@ import org.janusgraph.core.schema.SchemaManager;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Transaction defines a transactional context for a {@link org.janusgraph.core.JanusGraph}. Since JanusGraph is a transactional graph
@@ -71,7 +70,7 @@ public interface Transaction extends Graph, SchemaManager {
      * <p/>
      * Note, that using indexQuery will may ignore modifications in the current transaction.
      *
-     * @param indexName Name of the indexing backend to query as configured
+     * @param indexName Name of the index to query as configured
      * @param query Query string
      * @return JanusGraphIndexQuery object to query the index directly
      */

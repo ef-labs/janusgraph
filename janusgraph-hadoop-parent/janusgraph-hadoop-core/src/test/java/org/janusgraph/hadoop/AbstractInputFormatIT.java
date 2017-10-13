@@ -14,19 +14,17 @@
 
 package org.janusgraph.hadoop;
 
+import com.google.common.collect.ImmutableSet;
 import org.janusgraph.core.Cardinality;
 import org.janusgraph.core.JanusGraphVertex;
-import org.janusgraph.diskstorage.configuration.WriteConfiguration;
 import org.janusgraph.example.GraphOfTheGodsFactory;
 import org.janusgraph.graphdb.JanusGraphBaseTest;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.spark.process.computer.SparkGraphComputer;
 import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
-import org.apache.tinkerpop.gremlin.structure.util.GraphFactory;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -35,8 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import static org.junit.Assert.assertEquals;
@@ -75,12 +71,17 @@ public abstract class AbstractInputFormatIT extends JanusGraphBaseTest {
         Map<String, Object> propertiesOnVertex = graph.traversal().V().valueMap().next();
         List<?> valuesOnP = (List)propertiesOnVertex.values().iterator().next();
         assertEquals(numProps, valuesOnP.size());
+        for (int i = 0; i < numProps; i++) {
+            assertEquals(Integer.toString(i), valuesOnP.get(i).toString());
+        }
         Graph g = getGraph();
         GraphTraversalSource t = g.traversal(GraphTraversalSource.computer(SparkGraphComputer.class));
         assertEquals(numV, (long) t.V().count().next());
         propertiesOnVertex = t.V().valueMap().next();
-        valuesOnP = (List)propertiesOnVertex.values().iterator().next();
-        assertEquals(numProps, valuesOnP.size());
+        final Set<?> observedValuesOnP = ImmutableSet.copyOf((List)propertiesOnVertex.values().iterator().next());
+        assertEquals(numProps, observedValuesOnP.size());
+        // order may not be preserved in multi-value properties
+        assertEquals("Unexpected values", ImmutableSet.copyOf(valuesOnP), observedValuesOnP);
     }
 
     @Test
@@ -109,6 +110,20 @@ public abstract class AbstractInputFormatIT extends JanusGraphBaseTest {
         assertTrue(edgeIdIter.hasNext());
         Set<Object> edges = Sets.newHashSet(edgeIdIter);
         assertEquals(2, edges.size());
+    }
+
+    @Test
+    public void testGeoshapeGetValues() throws Exception {
+        GraphOfTheGodsFactory.load(graph, null, true);
+
+        // Read geoshape using the inputformat
+        Graph g = getGraph();
+        GraphTraversalSource t = g.traversal(GraphTraversalSource.computer(SparkGraphComputer.class));
+        Iterator<Object> geoIter = t.E().values("place");
+        assertNotNull(geoIter);
+        assertTrue(geoIter.hasNext());
+        Set<Object> geos = Sets.newHashSet(geoIter);
+        assertEquals(3, geos.size());
     }
 
     abstract protected Graph getGraph() throws IOException, ConfigurationException;

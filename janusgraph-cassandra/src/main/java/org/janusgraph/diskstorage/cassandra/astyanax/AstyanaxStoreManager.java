@@ -52,9 +52,9 @@ import org.janusgraph.diskstorage.configuration.Configuration;
 import org.janusgraph.diskstorage.keycolumnvalue.KCVMutation;
 import org.janusgraph.diskstorage.keycolumnvalue.KeyRange;
 import org.janusgraph.diskstorage.keycolumnvalue.StoreTransaction;
+import org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration;
 import org.janusgraph.graphdb.configuration.PreInitializeConfigOptions;
 import org.apache.cassandra.dht.IPartitioner;
-import org.apache.cassandra.dht.Token;
 import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.utils.FBUtilities;
 import org.apache.commons.lang.StringUtils;
@@ -66,8 +66,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import static org.janusgraph.diskstorage.cassandra.CassandraTransaction.getTx;
 
 @PreInitializeConfigOptions
@@ -127,6 +125,15 @@ public class AstyanaxStoreManager extends AbstractCassandraStoreManager {
             new ConfigOption<Integer>(ASTYANAX_NS, "max-cluster-connections-per-host",
             "Maximum pooled \"cluster\" connections per host",
             ConfigOption.Type.MASKABLE, 3);
+
+    /**
+     * The page size for Cassandra read operations.
+     * <p/>
+     */
+    public static final ConfigOption<Integer> READ_PAGE_SIZE =
+            new ConfigOption<Integer>(ASTYANAX_NS, "read-page-size",
+            "The page size for Cassandra read operations",
+            ConfigOption.Type.MASKABLE, Integer.class, 4096);
 
     /**
      * How Astyanax discovers Cassandra cluster nodes. This must be one of the
@@ -273,6 +280,7 @@ public class AstyanaxStoreManager extends AbstractCassandraStoreManager {
 
     private final RetryPolicy retryPolicy;
 
+    final int readPageSize;
     private final int retryDelaySlice;
     private final int retryMaxDelaySlice;
     private final int retrySuspendWindow;
@@ -287,6 +295,7 @@ public class AstyanaxStoreManager extends AbstractCassandraStoreManager {
 
         this.clusterName = config.get(CLUSTER_NAME);
 
+        readPageSize = config.get(READ_PAGE_SIZE);
         retryDelaySlice = config.get(RETRY_DELAY_SLICE);
         retryMaxDelaySlice = config.get(RETRY_MAX_DELAY_SLICE);
         retrySuspendWindow = config.get(RETRY_SUSPEND_WINDOW);
@@ -316,7 +325,6 @@ public class AstyanaxStoreManager extends AbstractCassandraStoreManager {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public IPartitioner getCassandraPartitioner() throws BackendException {
         Cluster cl = clusterContext.getClient();
         try {
@@ -426,9 +434,26 @@ public class AstyanaxStoreManager extends AbstractCassandraStoreManager {
             if (ks == null)
                 return;
 
-            for (ColumnFamilyDefinition cf : cluster.describeKeyspace(keySpaceName).getColumnFamilyList()) {
-                ks.truncateColumnFamily(new ColumnFamily<Object, Object>(cf.getName(), null, null));
+            if (this.storageConfig.get(GraphDatabaseConfiguration.DROP_ON_CLEAR)) {
+                ks.dropKeyspace();
+            } else {
+                final KeyspaceDefinition keyspaceDefinition = cluster.describeKeyspace(keySpaceName);
+                if (keyspaceDefinition == null) {
+                    return;
+                }
+                for (final ColumnFamilyDefinition cf : keyspaceDefinition.getColumnFamilyList()) {
+                    ks.truncateColumnFamily(new ColumnFamily<Object, Object>(cf.getName(), null, null));
+                }
             }
+        } catch (ConnectionException e) {
+            throw new PermanentBackendException(e);
+        }
+    }
+
+    @Override
+    public boolean exists() throws BackendException {
+        try {
+            return clusterContext.getClient().describeKeyspace(keySpaceName) != null;
         } catch (ConnectionException e) {
             throw new PermanentBackendException(e);
         }

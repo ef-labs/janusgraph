@@ -19,8 +19,6 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-
 import com.google.common.base.Predicate;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -114,7 +112,7 @@ public class HadoopConfiguration implements WriteConfiguration {
 
         Iterable<String> prefixedKeys = Iterables.filter(internalKeys, new Predicate<String>() {
             @Override
-            public boolean apply(@Nullable String internalKey) {
+            public boolean apply(final String internalKey) {
                 String k = internalKey;
                 if (null != prefix) {
                     if (k.startsWith(prefix)) {

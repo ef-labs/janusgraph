@@ -21,7 +21,6 @@ import org.janusgraph.diskstorage.Entry;
 import org.janusgraph.diskstorage.StaticBuffer;
 import org.janusgraph.diskstorage.BaseTransactionConfig;
 import org.janusgraph.diskstorage.StoreMetaData;
-import org.janusgraph.diskstorage.configuration.Configuration;
 import org.janusgraph.diskstorage.keycolumnvalue.*;
 
 import java.util.HashMap;
@@ -76,6 +75,11 @@ public class OrderedKeyValueStoreManagerAdapter implements KeyColumnValueStoreMa
     @Override
     public void clearStorage() throws BackendException {
         manager.clearStorage();
+    }
+
+    @Override
+    public boolean exists() throws BackendException {
+        return manager.exists();
     }
 
     @Override

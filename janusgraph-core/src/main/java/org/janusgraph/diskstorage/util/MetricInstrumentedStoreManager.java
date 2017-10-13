@@ -15,7 +15,6 @@
 package org.janusgraph.diskstorage.util;
 
 import com.codahale.metrics.Timer;
-import com.google.common.base.Preconditions;
 import org.janusgraph.diskstorage.BackendException;
 import org.janusgraph.diskstorage.BaseTransactionConfig;
 import org.janusgraph.diskstorage.StaticBuffer;
@@ -26,8 +25,6 @@ import static org.janusgraph.diskstorage.util.MetricInstrumentedStore.*;
 
 import java.util.List;
 import java.util.Map;
-
-import static org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration.METRICS_MERGE_STORES;
 
 /**
  * @author Matthias Broecheler (me@matthiasb.com)
@@ -104,6 +101,11 @@ public class MetricInstrumentedStoreManager implements KeyColumnValueStoreManage
     @Override
     public void clearStorage() throws BackendException {
         backend.clearStorage();
+    }
+
+    @Override
+    public boolean exists() throws BackendException {
+        return backend.exists();
     }
 
     @Override

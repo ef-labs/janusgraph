@@ -1,5 +1,4 @@
-JanusGraph Documentation
-========================
+= JanusGraph Documentation
 
 include::adoc_attributes.txt[]
 
@@ -14,5 +13,7 @@ include::indexbackends.txt[]
 include::advanced.txt[]
 
 include::internals.txt[]
+
+include::development.txt[]
 
 include::appendices.txt[]

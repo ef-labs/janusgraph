@@ -15,12 +15,8 @@
 package org.janusgraph.util.datastructures;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -128,15 +124,15 @@ public class RangeInterval<T> implements Interval<T> {
     }
 
     private Map.Entry<T,Boolean> comparePoints(T one, boolean oneIncl, T two, boolean twoIncl, boolean chooseBigger) {
-        if (one==null) return new AbstractMap.SimpleImmutableEntry(two,twoIncl);
-        if (two==null) return new AbstractMap.SimpleImmutableEntry(one,oneIncl);
+        if (one==null) return new AbstractMap.SimpleImmutableEntry<T, Boolean>(two,twoIncl);
+        if (two==null) return new AbstractMap.SimpleImmutableEntry<T, Boolean>(one,oneIncl);
         int c = ((Comparable)one).compareTo(two);
         if (c==0) {
-            return new AbstractMap.SimpleImmutableEntry(one, oneIncl & twoIncl);
+            return new AbstractMap.SimpleImmutableEntry<T, Boolean>(one, oneIncl & twoIncl);
         } else if ((c>0 && chooseBigger) || (c<0  && !chooseBigger)) {
-            return new AbstractMap.SimpleImmutableEntry(one,oneIncl);
+            return new AbstractMap.SimpleImmutableEntry<T, Boolean>(one,oneIncl);
         } else {
-            return new AbstractMap.SimpleImmutableEntry(two,twoIncl);
+            return new AbstractMap.SimpleImmutableEntry<T, Boolean>(two,twoIncl);
         }
     }
 
@@ -167,8 +163,7 @@ public class RangeInterval<T> implements Interval<T> {
         else if (other==null) return false;
         else if (!getClass().isInstance(other)) return false;
         RangeInterval oth = (RangeInterval)other;
-        if ((start==null ^ oth.start==null) || (end==null ^ oth.end==null)) return false;
-        return start.equals(oth.start) && end.equals(oth.end) && endInclusive==oth.endInclusive && startInclusive==oth.startInclusive;
+        return Objects.equals(start, oth.start) && Objects.equals(end, oth.end) && end.equals(oth.end) && endInclusive==oth.endInclusive && startInclusive==oth.startInclusive;
     }
 
     @Override

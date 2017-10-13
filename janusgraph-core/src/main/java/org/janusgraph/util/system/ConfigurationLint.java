@@ -15,11 +15,8 @@
 package org.janusgraph.util.system;
 
 import com.google.common.base.Preconditions;
-import org.janusgraph.core.util.ReflectiveConfigOptionLoader;
-import org.janusgraph.diskstorage.configuration.BasicConfiguration;
 import org.janusgraph.diskstorage.configuration.ConfigElement;
 import org.janusgraph.diskstorage.configuration.ConfigOption;
-import org.janusgraph.diskstorage.configuration.ModifiableConfiguration;
 import org.janusgraph.diskstorage.configuration.backend.CommonsConfiguration;
 import org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -43,7 +40,7 @@ public class ConfigurationLint {
             System.exit(1);
         }
 
-        log.info("Checking " + args[0]);
+        log.info("Checking " + LoggerUtil.sanitizeAndLaunder(args[0]));
         Status s = validate(args[0]);
         if (0 == s.errors) {
             log.info(s.toString());
@@ -55,9 +52,9 @@ public class ConfigurationLint {
 
     public static Status validate(String filename) throws IOException {
         Properties p = new Properties();
-        FileInputStream fis = new FileInputStream(filename);
-        p.load(fis);
-        fis.close();
+        try(FileInputStream fis = new FileInputStream(filename)) {
+            p.load(fis);
+        }
 
         final PropertiesConfiguration apc;
         try {

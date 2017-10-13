@@ -19,8 +19,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import org.apache.commons.collections.comparators.ComparableComparator;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
 import javax.annotation.Nullable;
 import java.util.*;
 
@@ -100,7 +98,7 @@ public class PointInterval<T> implements Interval<T> {
     public Interval<T> intersect(Interval<T> other) {
         Preconditions.checkArgument(other!=null);
         if (other instanceof PointInterval) {
-            Set<T> merge = Sets.newHashSet(points);
+            Sets.newHashSet(points);
             points.retainAll(((PointInterval)other).points);
             return new PointInterval<T>(points);
         } else if (other instanceof RangeInterval) {

@@ -17,7 +17,6 @@ package org.janusgraph.diskstorage.cassandra.embedded;
 import static org.janusgraph.diskstorage.cassandra.CassandraTransaction.getTx;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
@@ -104,7 +103,6 @@ public class CassandraEmbeddedStoreManager extends AbstractCassandraStoreManager
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public IPartitioner getCassandraPartitioner()
             throws BackendException {
         try {
@@ -148,12 +146,12 @@ public class CassandraEmbeddedStoreManager extends AbstractCassandraStoreManager
     public List<KeyRange> getLocalKeyPartition() throws BackendException {
         ensureKeyspaceExists(keySpaceName);
 
-        @SuppressWarnings("rawtypes")
+        
         Collection<Range<Token>> ranges = StorageService.instance.getPrimaryRanges(keySpaceName);
 
         List<KeyRange> keyRanges = new ArrayList<KeyRange>(ranges.size());
 
-        for (@SuppressWarnings("rawtypes") Range<Token> range : ranges) {
+        for (Range<Token> range : ranges) {
             keyRanges.add(CassandraHelper.transformRange(range));
         }
 
@@ -260,11 +258,20 @@ public class CassandraEmbeddedStoreManager extends AbstractCassandraStoreManager
             if (ksMetaData == null)
                 return;
 
-            for (String cfName : ksMetaData.cfMetaData().keySet())
-                StorageService.instance.truncate(keySpaceName, cfName);
+            if (this.storageConfig.get(GraphDatabaseConfiguration.DROP_ON_CLEAR)) {
+                MigrationManager.announceKeyspaceDrop(keySpaceName);
+            } else {
+                for (final String cfName : ksMetaData.cfMetaData().keySet())
+                    StorageService.instance.truncate(keySpaceName, cfName);
+            }
         } catch (Exception e) {
             throw new PermanentBackendException(e);
         }
+    }
+
+    @Override
+    public boolean exists() throws BackendException {
+        return Schema.instance.getKeyspaceInstance(keySpaceName) != null;
     }
 
     private void ensureKeyspaceExists(String keyspaceName) throws BackendException {

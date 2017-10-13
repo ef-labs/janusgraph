@@ -51,7 +51,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Matthias Broecheler (me@matthiasb.com)
@@ -182,12 +181,6 @@ public abstract class IDAuthorityTest {
         public long getIdUpperBound(int idNamespace) {
             return idUpperBound;
         }
-    }
-
-    private void checkBlock(IDBlock block) {
-        assertTrue(blockSize<10000);
-        LongSet ids = new LongHashSet((int)blockSize);
-        checkBlock(block,ids);
     }
 
     private void checkBlock(IDBlock block, LongSet ids) {

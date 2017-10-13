@@ -22,7 +22,6 @@ import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Element;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.VertexProperty;
-import org.apache.tinkerpop.gremlin.structure.util.ElementHelper;
 
 /**
  * AbstractElement is the base class for all elements in JanusGraph.
@@ -68,11 +67,11 @@ public abstract class AbstractElement implements InternalElement, Comparable<Jan
             return getCompareId()==((AbstractElement)other).getCompareId();
         } else if (other instanceof JanusGraphElement) {
             return ((JanusGraphElement) other).hasId() && getCompareId()==((JanusGraphElement)other).longId();
-        } else if (other instanceof Element) {
+        } else {
             Object otherId = ((Element)other).id();
             if (otherId instanceof RelationIdentifier) return ((RelationIdentifier) otherId).getRelationId()==getCompareId();
             else return otherId.equals(getCompareId());
-        } else return false;
+        }
     }
 
 

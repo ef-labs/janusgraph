@@ -32,7 +32,6 @@ import org.janusgraph.graphdb.database.idhandling.VariableLong;
 import org.janusgraph.graphdb.database.serialize.AttributeUtil;
 import org.janusgraph.graphdb.database.serialize.DataOutput;
 import org.janusgraph.graphdb.database.serialize.Serializer;
-import org.janusgraph.graphdb.database.serialize.attribute.LongSerializer;
 import org.janusgraph.graphdb.internal.*;
 import org.janusgraph.graphdb.relations.EdgeDirection;
 import org.janusgraph.graphdb.relations.RelationCache;
@@ -92,7 +91,6 @@ public class EdgeSerializer implements RelationReader {
 
         long typeId = typeAndDir.typeId;
         Direction dir = typeAndDir.dirID.getDirection();
-        RelationCategory rtype = typeAndDir.dirID.getRelationCategory();
 
         RelationType relationType = tx.getExistingRelationType(typeId);
         InternalRelationType def = (InternalRelationType) relationType;
@@ -234,7 +232,7 @@ public class EdgeSerializer implements RelationReader {
     }
 
     public StaticArrayEntry writeRelation(InternalRelation relation, InternalRelationType type, int position, TypeInspector tx) {
-        assert type==relation.getType() || type.getBaseType().equals(relation.getType());
+        assert type==relation.getType() || (type.getBaseType() != null && type.getBaseType().equals(relation.getType()));
         Direction dir = EdgeDirection.fromPosition(position);
         Preconditions.checkArgument(type.isUnidirected(Direction.BOTH) || type.isUnidirected(dir));
         long typeid = type.longId();

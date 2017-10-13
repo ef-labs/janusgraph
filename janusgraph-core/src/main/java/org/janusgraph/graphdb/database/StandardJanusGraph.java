@@ -24,10 +24,8 @@ import org.janusgraph.core.schema.ConsistencyModifier;
 import org.janusgraph.core.schema.SchemaStatus;
 import org.janusgraph.core.schema.JanusGraphManagement;
 import org.janusgraph.diskstorage.*;
-import org.janusgraph.diskstorage.configuration.BasicConfiguration;
 import org.janusgraph.diskstorage.configuration.Configuration;
 import org.janusgraph.diskstorage.configuration.ModifiableConfiguration;
-import org.janusgraph.diskstorage.configuration.backend.CommonsConfiguration;
 import org.janusgraph.diskstorage.indexing.IndexEntry;
 import org.janusgraph.diskstorage.indexing.IndexTransaction;
 import org.janusgraph.diskstorage.keycolumnvalue.*;
@@ -87,7 +85,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration.REGISTRATION_TIME;
-import static org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration.ROOT_NS;
 
 public class StandardJanusGraph extends JanusGraphBlueprintsGraph {
 
@@ -131,10 +128,14 @@ public class StandardJanusGraph extends JanusGraphBlueprintsGraph {
 
     private Set<StandardJanusGraphTx> openTransactions;
 
+    private String name = null;
+
     public StandardJanusGraph(GraphDatabaseConfiguration configuration) {
 
         this.config = configuration;
         this.backend = configuration.getBackend();
+
+        this.name = configuration.getGraphName();
 
         this.idAssigner = config.getIDAssigner(backend);
         this.idManager = idAssigner.getIDManager();
@@ -170,6 +171,9 @@ public class StandardJanusGraph extends JanusGraphBlueprintsGraph {
         log.debug("Installed shutdown hook {}", shutdownHook, new Throwable("Hook creation trace"));
     }
 
+    public String getGraphName() {
+        return this.name;
+    }
 
     @Override
     public boolean isOpen() {
@@ -631,7 +635,7 @@ public class StandardJanusGraph extends JanusGraphBlueprintsGraph {
 
     private static final Predicate<InternalRelation> SCHEMA_FILTER = new Predicate<InternalRelation>() {
         @Override
-        public boolean apply(@Nullable InternalRelation internalRelation) {
+        public boolean apply(final InternalRelation internalRelation) {
             return internalRelation.getType() instanceof BaseRelationType && internalRelation.getVertex(0) instanceof JanusGraphSchemaVertex;
         }
     };
@@ -672,6 +676,7 @@ public class StandardJanusGraph extends JanusGraphBlueprintsGraph {
             if (logTransaction) {
                 //[FAILURE] Inability to log transaction fails the transaction by escalation since it's likely due to unavailability of primary
                 //storage backend.
+                Preconditions.checkState(txLog != null, "Transaction log is null");
                 txLog.add(txLogHeader.serializeModifications(serializer, LogTxStatus.PRECOMMIT, tx, addedRelations, deletedRelations),txLogHeader.getLogKey());
             }
 

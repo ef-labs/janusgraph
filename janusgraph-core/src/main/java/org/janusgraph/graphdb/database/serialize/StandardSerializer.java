@@ -17,7 +17,6 @@ package org.janusgraph.graphdb.database.serialize;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableList;
 import org.janusgraph.core.*;
 import org.janusgraph.core.attribute.*;
 import org.janusgraph.core.schema.*;
@@ -43,8 +42,6 @@ import org.janusgraph.graphdb.types.TypeDefinitionDescription;
 
 import org.apache.tinkerpop.gremlin.process.traversal.traverser.util.TraverserSet;
 import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -57,8 +54,6 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class StandardSerializer implements AttributeHandler, Serializer {
-
-    private static final Logger log = LoggerFactory.getLogger(StandardSerializer.class);
 
     /**
      * This offset is used by user registration to make sure they don't collide with internal class
@@ -143,6 +138,16 @@ public class StandardSerializer implements AttributeHandler, Serializer {
     public synchronized <V> void registerClass(int registrationNo, Class<V> datatype, AttributeSerializer<V> serializer) {
         Preconditions.checkArgument(registrationNo >= 0 && registrationNo < MAX_REGISTRATION_NO, "Registration number" +
                 " out of range [0,%s]: %s", MAX_REGISTRATION_NO, registrationNo);
+
+        if (datatype == HashMap.class) {
+            final Integer hashMapRegNo = registrations.inverse().get(normalizeDataType(HashMap.class));
+            if (hashMapRegNo != null) {
+            	// Remove the default HashMap serializer so we can replace it with the custom one
+            	registrations.remove(hashMapRegNo);
+            	handlers.remove(datatype);
+            }
+        }
+
         registerClassInternal(CLASS_REGISTRATION_OFFSET + registrationNo, datatype, serializer);
     }
 

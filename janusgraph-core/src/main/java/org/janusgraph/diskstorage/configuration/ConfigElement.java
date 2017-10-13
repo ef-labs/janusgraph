@@ -16,7 +16,6 @@ package org.janusgraph.diskstorage.configuration;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import org.janusgraph.core.util.ReflectiveConfigOptionLoader;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -77,6 +76,10 @@ public abstract class ConfigElement {
     @Override
     public String toString() {
         return (namespace !=null? namespace.toString()+SEPARATOR:"") + name;
+    }
+
+    public String toStringWithoutRoot() {
+        return toString().substring(getRoot().toString().length() + 1);
     }
 
     @Override

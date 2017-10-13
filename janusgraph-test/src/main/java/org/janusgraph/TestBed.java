@@ -14,29 +14,14 @@
 
 package org.janusgraph;
 
-import com.google.common.base.Preconditions;
-import org.janusgraph.diskstorage.StaticBuffer;
-import org.janusgraph.diskstorage.WriteBuffer;
-import org.janusgraph.diskstorage.util.StaticArrayBuffer;
-import org.janusgraph.diskstorage.util.WriteByteBuffer;
-import org.janusgraph.graphdb.database.idhandling.IDHandler;
-import org.janusgraph.graphdb.types.system.BaseKey;
-import org.janusgraph.graphdb.types.system.BaseLabel;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
-
 import javax.annotation.Nonnull;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class TestBed {
 
@@ -86,23 +71,6 @@ public class TestBed {
 
     }
 
-    private static final ArrayList<Object> mixedList = new ArrayList<Object>() {{
-        add("try1");
-        add(2);
-    }};
-
-    private static void throwOuter() throws Exception {
-        throw throwInner(new IllegalArgumentException("Test"));
-    }
-
-    private static Exception throwInner(Exception e) throws Exception {
-        return e;
-    }
-
-    private static int plusFive(int num) {
-        return num+5;
-    }
-
     public static class TestA {
 
         final Number a;
@@ -147,7 +115,7 @@ public class TestBed {
 
         public void observe(Object o1, Object o2, Observer other) {
             if (!observed && !other.observes()) return;
-            List combined = new ArrayList<>();
+            List<Object> combined = new ArrayList<>();
             combined.add(o1);
             combined.add(o2);
             observe(combined);
@@ -277,11 +245,6 @@ public class TestBed {
 //        Thread.sleep(2000);
         System.out.println("Terminate: " + exe.awaitTermination(5,TimeUnit.SECONDS));
         System.out.println("DONE");
-        NonBlockingHashMapLong<String> id1 = new NonBlockingHashMapLong<String>(128);
-        ConcurrentHashMap<Long,String> id2 = new ConcurrentHashMap<Long, String>(128,0.75f,2);
-
-
-
     }
 
     public static String toBinary(int b) {
