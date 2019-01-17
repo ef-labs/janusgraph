@@ -58,7 +58,7 @@ public class KeyValueStoreUtil {
     }
 
     public static void print(String[][] data) {
-        for (int i = 0; i < data.length; i++) print(data[i]);
+        for (String[] aData : data) print(aData);
     }
 
     public static StaticBuffer getBuffer(int no) {
@@ -85,7 +85,7 @@ public class KeyValueStoreUtil {
         return serial.readObjectNotNull(b.asReadBuffer(), String.class);
     }
 
-    public static int count(RecordIterator<?> iterator) throws BackendException {
+    public static int count(RecordIterator<?> iterator) {
         int count = 0;
         while (iterator.hasNext()) {
             iterator.next();

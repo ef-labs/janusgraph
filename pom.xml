@@ -1,13 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>7</version>
-    </parent>
     <groupId>org.janusgraph</groupId>
     <artifactId>janusgraph</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.1</version>
     <packaging>pom</packaging>
     <prerequisites>
         <maven>2.2.1</maven>
@@ -60,15 +55,25 @@
         <connection>scm:git:git@github.com:ef-labs/janusgraph.git</connection>
         <developerConnection>scm:git:git@github.com:ef-labs/janusgraph.git</developerConnection>
         <url>git@github.com:ef-labs/janusgraph.git</url>
-        <tag>0.2.0</tag>
+        <tag>0.3.1</tag>
     </scm>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
     <properties>
-        <janusgraph.compatible.versions>0.1.0,0.1.1</janusgraph.compatible.versions>
         <titan.compatible-versions>1.0.0,1.1.0-SNAPSHOT</titan.compatible-versions>
-        <tinkerpop.version>3.2.6</tinkerpop.version>
+        <tinkerpop.version>3.3.3</tinkerpop.version>
         <junit.version>4.12</junit.version>
         <mrunit.version>1.1.0</mrunit.version>
-        <cassandra.version>2.1.18</cassandra.version>
+        <mockito.version>1.10.19</mockito.version>
+        <cassandra.version>2.1.20</cassandra.version>
         <jamm.version>0.3.0</jamm.version>
         <metrics2.version>2.1.2</metrics2.version>
         <metrics3.version>3.0.1</metrics3.version>
@@ -76,17 +81,16 @@
         <slf4j.version>1.7.12</slf4j.version>
         <httpcomponents.version>4.4.1</httpcomponents.version>
         <hadoop2.version>2.7.2</hadoop2.version>
-        <hbase098.core.version>0.98.24</hbase098.core.version>
-        <hbase098.version>${hbase098.core.version}-hadoop2</hbase098.version>
-        <hbase100.core.version>1.2.6</hbase100.core.version>
-        <hbase100.version>${hbase100.core.version}</hbase100.version>
-        <bigtable.version>1.0.0-pre3</bigtable.version>
+        <hbase1.version>1.2.6</hbase1.version>
+        <hbase2.version>2.1.0</hbase2.version>
+        <hbase.server.version>1.2.6</hbase.server.version>
+        <bigtable.version>1.4.0</bigtable.version>
         <scylladb.version>1.7.1</scylladb.version>
         <!-- align with org.apache.hbase:hbase -->
         <jackson1.version>1.9.13</jackson1.version>
         <jackson2.version>2.6.6</jackson2.version>
         <lucene-solr.version>7.0.0</lucene-solr.version>
-        <elasticsearch.version>5.6.2</elasticsearch.version>
+        <elasticsearch.version>6.0.1</elasticsearch.version>
         <commons.beanutils.version>1.7.0</commons.beanutils.version>
         <commons.collections.version>3.2.2</commons.collections.version>
         <joda.version>2.8.2</joda.version>
@@ -98,7 +102,7 @@
         <zookeeper.version>3.4.6</zookeeper.version>
         <jersey.version>1.9</jersey.version>
         <!-- align with org.apache.tinkerpop:tinkerpop -->
-        <netty4.version>4.0.50.Final</netty4.version>
+        <netty4.version>4.0.56.Final</netty4.version>
         <jna.version>4.0.0</jna.version>
         <kuali.s3.wagon.version>1.1.20</kuali.s3.wagon.version>
         <jasper.version>5.5.23</jasper.version>
@@ -120,11 +124,12 @@
         <compiler.target>1.8</compiler.target>
         <test.excluded.groups>org.janusgraph.testcategory.MemoryTests,org.janusgraph.testcategory.PerformanceTests,org.janusgraph.testcategory.BrittleTests</test.excluded.groups>
         <dependency.locations.enabled>false</dependency.locations.enabled>
-        <cassandra-driver.version>3.1.4</cassandra-driver.version>
+        <cassandra-driver.version>3.3.2</cassandra-driver.version>
     </properties>
     <modules>
         <module>janusgraph-codepipelines-ci</module>
         <module>janusgraph-core</module>
+        <module>janusgraph-server</module>
         <module>janusgraph-test</module>
         <module>janusgraph-berkeleyje</module>
         <module>janusgraph-cql</module>
@@ -231,6 +236,7 @@
                       profile id listed below.
                     -->
                     <releaseProfiles>janusgraph-release</releaseProfiles>
+                    <useReleaseProfile>false</useReleaseProfile>
 
                     <!-- Keep all submodules at same version as parent -->
                     <autoVersionSubmodules>true</autoVersionSubmodules>
@@ -362,14 +368,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-release-plugin</artifactId>
-                    <version>2.5</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.scm</groupId>
-                            <artifactId>maven-scm-provider-gitexe</artifactId>
-                            <version>1.9</version>
-                        </dependency>
-                    </dependencies>
+                    <version>2.5.3</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
@@ -503,7 +502,7 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-scala_2.10</artifactId>
+                <artifactId>jackson-module-scala_2.11</artifactId>
                 <version>${jackson2.version}</version>
             </dependency>
             <dependency>
@@ -540,6 +539,11 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>3.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>1.1.0.Final</version>
             </dependency>
 
             <!-- Jackson 1.x -->
@@ -726,6 +730,11 @@
                 <artifactId>compress-lzf</artifactId>
                 <version>1.0.0</version>
             </dependency>
+            <dependency>
+                <groupId>net.jpountz.lz4</groupId>
+                <artifactId>lz4</artifactId>
+                <version>1.3.0</version>
+            </dependency>
 
             <dependency>
                 <groupId>net.java.dev.jets3t</groupId>
@@ -812,7 +821,12 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
-                <version>1.8.5</version>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -873,14 +887,14 @@
             <dependency>
                 <groupId>org.locationtech.spatial4j</groupId>
                 <artifactId>spatial4j</artifactId>
-                <version>0.6</version>
+                <version>0.7</version>
             </dependency>
 
             <!-- Java Topology Suite (JTS) -->
             <dependency>
-                <groupId>com.vividsolutions</groupId>
-                <artifactId>jts</artifactId>
-                <version>1.13</version>
+                <groupId>org.locationtech.jts</groupId>
+                <artifactId>jts-core</artifactId>
+                <version>1.15.0</version>
             </dependency>
 
             <!-- Package prefix is org.apache.commons.httpclient -->
@@ -1087,45 +1101,6 @@
     </dependencies>
 
     <profiles>
-        <profile>
-            <id>sonatype-oss-release</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>2.1.2</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <phase>none</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <phase>none</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven.gpg.version}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>none</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
 
         <profile>
             <id>janusgraph-release</id>
@@ -1292,7 +1267,7 @@
                 </dependencies>
             </dependencyManagement>
         </profile>
-	
+
         <profile>
             <id>coverage</id>
             <properties>
@@ -1543,7 +1518,7 @@
                                 <inherited>false</inherited>
                                 <configuration>
                                     <sourceDirectory>${asciidoc.input.dir}</sourceDirectory>
-                                    <sourceDocumentName>index.txt</sourceDocumentName>
+                                    <sourceDocumentName>index.adoc</sourceDocumentName>
                                     <outputDirectory>${docbook.output.dir}</outputDirectory>
                                     <backend>docbook5</backend>
                                     <doctype>book</doctype>
@@ -1687,68 +1662,6 @@
                 </plugins>
             </build>
         </profile>
-
-        <profile>
-            <id>disable-javadoclint</id>
-
-            <activation>
-                <jdk>1.8</jdk>
-            </activation>
-
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <configuration>
-                                <additionalparam>-Xdoclint:none</additionalparam>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
-
-        <!--
-        <profile>
-            <id>docbkx</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.agilejava.docbkx</groupId>
-                        <artifactId>docbkx-maven-plugin</artifactId>
-                        <version>2.0.15</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>net.sf.xslthl</groupId>
-                                <artifactId>xslthl</artifactId>
-                                <version>2.1.0</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                            <dependency>
-                                <groupId>net.sf.offo</groupId>
-                                <artifactId>fop-hyph</artifactId>
-                                <version>1.2</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
-                        <configuration>
-                            <highlightSource>1</highlightSource>
-                            <htmlCustomization>htcust.xsl</htmlCustomization>
-                            <hyphenate>false</hyphenate>
-                            <sourceDirectory>${project.basedir}/target/generated-docs/</sourceDirectory>
-                            <includes>index.xml</includes>
-                            <hyphenateVerbatim>false</hyphenateVerbatim>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        -->
 
         <profile>
             <id>ef-release</id>

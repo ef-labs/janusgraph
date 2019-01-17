@@ -49,7 +49,7 @@ public class ElasticsearchRunner extends DaemonRunner<ElasticsearchStatus> {
 
     private static final String DEFAULT_HOME_DIR = ".";
 
-    private final String homedir;
+    private final String homeDirectory;
 
     private ElasticMajorVersion majorVersion;
 
@@ -71,12 +71,12 @@ public class ElasticsearchRunner extends DaemonRunner<ElasticsearchStatus> {
                     }
                 }
             }
-        } catch (IOException e) { }
+        } catch (IOException ignored) { }
         if (version == null) {
             throw new RuntimeException("Unable to find Elasticsearch version");
         }
         majorVersion = ElasticMajorVersion.parse(version);
-        this.homedir = esHome + File.separator + "target" + File.separator + "elasticsearch-" + version;
+        this.homeDirectory = esHome + File.separator + "target" + File.separator + "elasticsearch-" + version;
     }
 
     public ElasticsearchRunner() {
@@ -112,21 +112,23 @@ public class ElasticsearchRunner extends DaemonRunner<ElasticsearchStatus> {
         log.info("Sent SIGTERM to {} pid {}", getDaemonShortName(), stat.getPid());
 
         try {
-            watchLog(" closed", 60L, TimeUnit.SECONDS);
+            watchLog(" closed");
             Thread.sleep(10000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-        stat.getFile().delete();
-
-        log.info("Deleted {}", stat.getFile());
+        if (stat.getFile().delete()){
+            log.info("Deleted {}", stat.getFile());
+        } else {
+            log.error("Unable to delete {}", stat.getFile());
+        }
     }
 
     @Override
     protected ElasticsearchStatus startImpl() throws IOException {
-        File data = new File(homedir + File.separator + "data");
-        File logs = new File(homedir + File.separator + "logs");
+        File data = new File(homeDirectory + File.separator + "data");
+        File logs = new File(homeDirectory + File.separator + "logs");
 
         if (data.exists() && data.isDirectory()) {
             log.info("Deleting {}", data);
@@ -138,9 +140,9 @@ public class ElasticsearchRunner extends DaemonRunner<ElasticsearchStatus> {
             FileUtils.deleteDirectory(logs);
         }
 
-        runCommand(homedir + File.separator + "bin" + File.separator + "elasticsearch", "-d", "-p", ES_PID_FILE);
+        runCommand(homeDirectory + File.separator + "bin" + File.separator + "elasticsearch", "-d", "-p", ES_PID_FILE);
         try {
-            watchLog(" started", 60L, TimeUnit.SECONDS);
+            watchLog(" started");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -153,18 +155,18 @@ public class ElasticsearchRunner extends DaemonRunner<ElasticsearchStatus> {
         return ElasticsearchStatus.read(ES_PID_FILE);
     }
 
-    private void watchLog(String suffix, long duration, TimeUnit unit) throws InterruptedException {
+    private void watchLog(String suffix) throws InterruptedException {
         long startMS = System.currentTimeMillis();
-        long durationMS = TimeUnit.MILLISECONDS.convert(duration, unit);
+        long durationMS = TimeUnit.MILLISECONDS.convert(60L, TimeUnit.SECONDS);
         long elapsedMS;
 
-        File logFile = new File(homedir + File.separator + "logs" + File.separator + "elasticsearch.log");
+        File logFile = new File(homeDirectory + File.separator + "logs" + File.separator + "elasticsearch.log");
 
         log.info("Watching ES logfile {} for {} token", logFile, suffix);
 
         while ((elapsedMS = System.currentTimeMillis() - startMS) < durationMS) {
 
-            // Grep for a logline ending in the suffix and assume that means ES is ready
+            // Grep for a log line ending in the suffix and assume that means ES is ready
             BufferedReader br = null;
             try {
                 br = new BufferedReader(new FileReader(logFile));

@@ -28,6 +28,7 @@ import org.janusgraph.diskstorage.util.WriteByteBuffer;
 import org.janusgraph.diskstorage.util.time.TimestampProviders;
 import org.janusgraph.graphdb.database.idhandling.VariableLong;
 import org.janusgraph.graphdb.database.log.LogTxStatus;
+import org.janusgraph.graphdb.database.management.GraphCacheEvictionAction;
 import org.janusgraph.graphdb.database.management.MgmtLogType;
 import org.janusgraph.graphdb.database.serialize.attribute.*;
 import org.janusgraph.graphdb.internal.ElementCategory;
@@ -36,7 +37,6 @@ import org.janusgraph.graphdb.internal.RelationCategory;
 import org.janusgraph.graphdb.internal.JanusGraphSchemaCategory;
 import org.janusgraph.graphdb.log.StandardTransactionId;
 import org.janusgraph.graphdb.types.ParameterType;
-import org.janusgraph.core.schema.SchemaStatus;
 import org.janusgraph.graphdb.types.TypeDefinitionCategory;
 import org.janusgraph.graphdb.types.TypeDefinitionDescription;
 
@@ -131,6 +131,7 @@ public class StandardSerializer implements AttributeHandler, Serializer {
         registerClassInternal(66,StandardTransactionId.class, new StandardTransactionIdSerializer());
         registerClassInternal(67,TraverserSet.class, new SerializableSerializer());
         registerClassInternal(68,HashMap.class, new SerializableSerializer());
+        registerClassInternal(69,GraphCacheEvictionAction.class, new EnumSerializer<>(GraphCacheEvictionAction.class));
 
     }
 
@@ -426,7 +427,7 @@ public class StandardSerializer implements AttributeHandler, Serializer {
             return getClass(VariableLong.readPositive(buffer));
         }
 
-        private final Class getClass(long registrationNo) {
+        private Class getClass(long registrationNo) {
             assert registrationNo<Integer.MAX_VALUE && registrationNo>=0;
             if (registrationNo==0) return null;
             return getDataType((int) registrationNo);

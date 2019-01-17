@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.janusgraph</groupId>
         <artifactId>janusgraph</artifactId>
-        <version>0.2.0</version>
+        <version>0.3.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>janusgraph-core</artifactId>
@@ -77,9 +77,8 @@
             <artifactId>spatial4j</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.vividsolutions</groupId>
-            <artifactId>jts</artifactId>
-            <optional>true</optional>
+            <groupId>org.locationtech.jts</groupId>
+            <artifactId>jts-core</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-collections</groupId>
@@ -196,7 +195,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>shade-gremlin-groovy</id>

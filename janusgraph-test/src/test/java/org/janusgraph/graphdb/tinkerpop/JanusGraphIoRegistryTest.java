@@ -43,7 +43,7 @@ public class JanusGraphIoRegistryTest {
 
     private final Logger log = LoggerFactory.getLogger(JanusGraphIoRegistryTest.class);
 
-    private static ByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
+    private static final ByteBufAllocator allocator = UnpooledByteBufAllocator.DEFAULT;
 
     /**
      * This is necessary since we replace the default TinkerPop PSerializer
@@ -131,7 +131,7 @@ public class JanusGraphIoRegistryTest {
     }
 
     @Test
-    public void testLegacyGeoshapAsGryo() throws SerializationException {
+    public void testLegacyGeoshapAsGryo() {
         final Geoshape point = Geoshape.point(1.0d, 4.0d);
 
         Kryo kryo = new Kryo();

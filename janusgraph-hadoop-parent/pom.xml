@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.janusgraph</groupId>
         <artifactId>janusgraph</artifactId>
-        <version>0.2.0</version>
+        <version>0.3.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>janusgraph-hadoop-parent</artifactId>
@@ -76,22 +76,18 @@
             <version>${tinkerpop.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>net.jpountz.lz4</groupId>
-                    <artifactId>lz4</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.eclipse.jetty.orbit</groupId>
                     <artifactId>javax.servlet</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.module</groupId>
-                    <artifactId>jackson-module-scala_2.10</artifactId>
+                    <artifactId>jackson-module-scala_2.11</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-scala_2.10</artifactId>
+            <artifactId>jackson-module-scala_2.11</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.scala-lang</groupId>
@@ -131,6 +127,12 @@
 
         <dependency>
             <groupId>org.janusgraph</groupId>
+            <artifactId>janusgraph-hbase-server</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.janusgraph</groupId>
             <artifactId>janusgraph-hbase-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
@@ -168,6 +170,12 @@
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-core</artifactId>
             <version>${cassandra-driver.version}</version>
+            <exclusions>
+              <exclusion>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+              </exclusion>
+            </exclusions>
         </dependency>
         <!-- Logging backends.
              Enforce a classpath ordering constraint to ensure slf4j-log4j12

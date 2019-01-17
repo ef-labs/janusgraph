@@ -39,10 +39,10 @@ import java.util.stream.Stream;
  * any reference to `v.SOME_KEY`, `e.SOME_KEY` or `p.SOME_KEY` with the respective key reference. This replacement
  * is 'dumb' in the sense that it relies on simple string replacements to accomplish this. If the key contains special characters
  * (in particular space) then it must be encapsulated in quotation marks.
- * </p>
+ * <p>
  * In addition to the query string, a number of parameters can be specified which will be passed verbatim to the indexing
  * backend during query execution.
- * </p>
+ * <p>
  * This class essentially just acts as a builder, uses the {@link IndexSerializer} to execute the query, and then post-processes
  * the result set to return to the user.
  *
@@ -81,7 +81,7 @@ public class IndexQueryBuilder extends BaseQuery implements JanusGraphIndexQuery
     /**
      * Name to use for unknown keys, i.e. key references that could not be resolved to an actual type in the database.
      */
-    private final String unkownKeyName;
+    private final String unknownKeyName;
     /**
      * In addition to limit, this type of query supports offsets.
      */
@@ -95,7 +95,7 @@ public class IndexQueryBuilder extends BaseQuery implements JanusGraphIndexQuery
         this.serializer = serializer;
 
         parameters = Lists.newArrayList();
-        unkownKeyName = tx.getGraph().getConfiguration().getUnknownIndexKeyName();
+        unknownKeyName = tx.getGraph().getConfiguration().getUnknownIndexKeyName();
         this.offset=0;
     }
 
@@ -131,7 +131,7 @@ public class IndexQueryBuilder extends BaseQuery implements JanusGraphIndexQuery
     }
 
     public String getUnknownKeyName() {
-        return unkownKeyName;
+        return unknownKeyName;
     }
 
 
@@ -198,7 +198,8 @@ public class IndexQueryBuilder extends BaseQuery implements JanusGraphIndexQuery
             log.warn("Modifications in this transaction might not be accurately reflected in this index query: {}",query);
         return serializer.executeTotals(this,resultType,tx.getTxHandle(),tx);
     }
-    
+
+    @Deprecated
     @Override
     public Iterable<Result<JanusGraphVertex>> vertices() {
         return new StreamIterable<>(vertexStream());
@@ -210,6 +211,7 @@ public class IndexQueryBuilder extends BaseQuery implements JanusGraphIndexQuery
         return execute(ElementCategory.VERTEX, JanusGraphVertex.class);
     }
 
+    @Deprecated
     @Override
     public Iterable<Result<JanusGraphEdge>> edges() {
         return new StreamIterable<>(edgeStream());
@@ -221,6 +223,7 @@ public class IndexQueryBuilder extends BaseQuery implements JanusGraphIndexQuery
         return execute(ElementCategory.EDGE, JanusGraphEdge.class);
     }
 
+    @Deprecated
     @Override
     public Iterable<Result<JanusGraphVertexProperty>> properties() {
         return new StreamIterable<>(propertyStream());

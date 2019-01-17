@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * A factory compatible with Apache commons-pool for Cassandra Thrift API
  * connections.
  *
- * @author Dan LaRocque <dalaro@hopcount.org>
+ * @author Dan LaRocque &lt;dalaro@hopcount.org&gt;
  */
 public class CTConnectionFactory implements KeyedPoolableObjectFactory<String, CTConnection> {
 
@@ -49,7 +49,7 @@ public class CTConnectionFactory implements KeyedPoolableObjectFactory<String, C
     private final AtomicReference<Config> cfgRef;
 
     private CTConnectionFactory(Config config) {
-        this.cfgRef = new AtomicReference<Config>(config);
+        this.cfgRef = new AtomicReference<>(config);
     }
 
     @Override

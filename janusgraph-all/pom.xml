@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.janusgraph</groupId>
         <artifactId>janusgraph</artifactId>
-        <version>0.2.0</version>
+        <version>0.3.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>janusgraph-all</artifactId>
@@ -30,14 +30,25 @@
         </dependency>
         <dependency>
             <groupId>org.janusgraph</groupId>
-            <artifactId>janusgraph-cassandra</artifactId>
+            <artifactId>janusgraph-server</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.janusgraph</groupId>
-            <artifactId>janusgraph-cql</artifactId>
+            <artifactId>janusgraph-cassandra</artifactId>
             <version>${project.version}</version>
         </dependency>
+      <dependency>
+        <groupId>org.janusgraph</groupId>
+        <artifactId>janusgraph-cql</artifactId>
+        <version>${project.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
         <dependency>
             <groupId>org.janusgraph</groupId>
             <artifactId>janusgraph-berkeleyje</artifactId>
@@ -47,11 +58,6 @@
             <groupId>org.janusgraph</groupId>
             <artifactId>janusgraph-hbase</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-shaded-client</artifactId>
-            <version>${hbase100.version}</version>
         </dependency>
         <dependency>
             <groupId>org.janusgraph</groupId>
@@ -85,7 +91,7 @@
         </dependency>
 
         <!-- Override Jackson versions in our transitive dependencies.
-             Without these deps, janusgraph-all users can end up with
+             Without these dependencies, janusgraph-all users can end up with
              1.9 + 1.8 jars together, and this leads to linkage errors.
              It might be a better idea to dependencyManagement imports if your Maven version supports it:
              http://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Importing_Dependencies -->
@@ -166,4 +172,42 @@
             <!-- Done disabling unnecessary plugins -->
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>hbase1</id>
+            <activation>
+                <property>
+                    <name>!hbase.profile</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hbase</groupId>
+                    <artifactId>hbase-shaded-client</artifactId>
+                    <version>${hbase1.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.hbase</groupId>
+                    <artifactId>hbase-shaded-server</artifactId>
+                    <version>${hbase1.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>hbase2</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hbase</groupId>
+                    <artifactId>hbase-shaded-client</artifactId>
+                    <version>${hbase2.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.hbase</groupId>
+                    <artifactId>hbase-shaded-mapreduce</artifactId>
+                    <version>${hbase2.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

@@ -21,28 +21,32 @@ import com.google.common.collect.Multimap;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.codehaus.jackson.map.ObjectMapper;
+import org.apache.http.util.EntityUtils;
+import org.apache.tinkerpop.shaded.jackson.databind.ObjectMapper;
 import org.janusgraph.core.Cardinality;
 import org.janusgraph.core.JanusGraphException;
 import org.janusgraph.core.attribute.*;
+import org.janusgraph.core.schema.Parameter;
 import org.janusgraph.diskstorage.BackendException;
 import org.janusgraph.diskstorage.configuration.BasicConfiguration;
 import org.janusgraph.diskstorage.configuration.Configuration;
 import org.janusgraph.diskstorage.configuration.ModifiableConfiguration;
 import org.janusgraph.diskstorage.configuration.backend.CommonsConfiguration;
-import org.janusgraph.diskstorage.indexing.IndexProvider;
-import org.janusgraph.diskstorage.indexing.IndexProviderTest;
+import org.janusgraph.diskstorage.indexing.*;
 import org.janusgraph.core.schema.Mapping;
-import org.janusgraph.diskstorage.indexing.IndexQuery;
 import org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration;
 import org.janusgraph.graphdb.query.condition.PredicateCondition;
+import org.janusgraph.graphdb.types.ParameterType;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -69,6 +73,8 @@ public class ElasticSearchIndexTest extends IndexProviderTest {
     static CloseableHttpClient httpClient;
     static ObjectMapper objectMapper;
 
+    private static char REPLACEMENT_CHAR = '\u2022';
+
     @BeforeClass
     public static void startElasticsearch() throws Exception {
         esr = new ElasticsearchRunner();
@@ -78,10 +84,10 @@ public class ElasticSearchIndexTest extends IndexProviderTest {
         host = new HttpHost(InetAddress.getByName(esr.getHostname()), ElasticsearchRunner.PORT);
         if (esr.getEsMajorVersion().value > 2) {
             IOUtils.closeQuietly(httpClient.execute(host, new HttpDelete("_ingest/pipeline/pipeline_1")));
-            final HttpPut newpipeline = new HttpPut("_ingest/pipeline/pipeline_1");
-            newpipeline.setHeader("Content-Type", "application/json");
-            newpipeline.setEntity(new StringEntity("{\"description\":\"Test pipeline\",\"processors\":[{\"set\":{\"field\":\"" +STRING+ "\",\"value\":\"hello\"}}]}", Charset.forName("UTF-8")));
-            IOUtils.closeQuietly(httpClient.execute(host, newpipeline));
+            final HttpPut newPipeline = new HttpPut("_ingest/pipeline/pipeline_1");
+            newPipeline.setHeader("Content-Type", "application/json");
+            newPipeline.setEntity(new StringEntity("{\"description\":\"Test pipeline\",\"processors\":[{\"set\":{\"field\":\"" +STRING+ "\",\"value\":\"hello\"}}]}", Charset.forName("UTF-8")));
+            IOUtils.closeQuietly(httpClient.execute(host, newPipeline));
         }
     }
 
@@ -233,10 +239,10 @@ public class ElasticSearchIndexTest extends IndexProviderTest {
     }
 
     /**
-     * Test injest pipeline.
+     * Test ingest pipeline.
      */
     @Test
-    public void testInjestPipeline() throws Exception {
+    public void testIngestPipeline() throws Exception {
         if (esr.getEsMajorVersion().value > 2) {
             initialize("ingestvertex");
             final Multimap<String, Object> docs = HashMultimap.create();
@@ -247,4 +253,99 @@ public class ElasticSearchIndexTest extends IndexProviderTest {
             assertEquals(1, tx.queryStream(new IndexQuery("ingestvertex", PredicateCondition.of(STRING, Cmp.EQUAL, "hello"))).count());
         }
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMapKey2Field_IllegalCharacter() {
+        index.mapKey2Field("here is an illegal character: " + REPLACEMENT_CHAR, null);
+    }
+
+    @Test
+    public void testMapKey2Field_MappingSpaces() {
+        String expected = "field" + REPLACEMENT_CHAR + "name" + REPLACEMENT_CHAR + "with" + REPLACEMENT_CHAR + "spaces";
+        assertEquals(expected, index.mapKey2Field("field name with spaces", null));
+    }
+
+    @Test
+    public void testClearStorageWithAliases() throws Exception {
+        IOUtils.closeQuietly(httpClient.execute(host, new HttpPut("test1")));
+        IOUtils.closeQuietly(httpClient.execute(host, new HttpPut("test2")));
+        final HttpPost addAlias = new HttpPost("_aliases");
+        addAlias.setHeader("Content-Type", "application/json");
+        addAlias.setEntity(new StringEntity("{\"actions\": [{\"add\": {\"indices\": [\"test1\", \"test2\"], \"alias\": \"alias1\"}}]}", Charset.forName("UTF-8")));
+        IOUtils.closeQuietly(httpClient.execute(host, addAlias));
+
+        initialize("vertex");
+        assertTrue(indexExists(GraphDatabaseConfiguration.INDEX_NAME.getDefaultValue()));
+
+        index.clearStorage();
+
+        assertFalse(indexExists(GraphDatabaseConfiguration.INDEX_NAME.getDefaultValue()));
+        assertTrue(indexExists("test1"));
+        assertTrue(indexExists("test2"));
+    }
+
+    @Test
+    public void testCustomMappingProperty() throws BackendException, IOException, ParseException {
+
+        String mappingTypeName = "vertex";
+        String indexPrefix = "janusgraph";
+        String parameterName = "boost";
+        Double parameterValue = 5.5;
+
+        String field = "field_with_custom_prop";
+
+        KeyInformation keyInfo = new StandardKeyInformation(
+            String.class,
+            Cardinality.SINGLE,
+            Mapping.STRING.asParameter(),
+            Parameter.of(ParameterType.customParameterName(parameterName), parameterValue));
+
+        index.register(mappingTypeName, field, keyInfo, tx);
+
+        String indexName = indexPrefix+"_"+mappingTypeName;
+
+        CloseableHttpResponse response = getESMapping(indexName, mappingTypeName);
+
+        // Fallback to multitype index
+        if(response.getStatusLine().getStatusCode() != 200){
+            indexName = indexPrefix;
+            response = getESMapping(indexName, mappingTypeName);
+        }
+
+        HttpEntity entity = response.getEntity();
+
+        JSONObject json = (JSONObject) new JSONParser().parse(EntityUtils.toString(entity));
+
+        String returnedProperty = retrieveValueFromJSON(json,
+            indexName, "mappings", mappingTypeName, "properties", field, parameterName);
+
+        assertEquals(parameterValue.toString(), returnedProperty);
+
+        IOUtils.closeQuietly(response);
+    }
+
+    private CloseableHttpResponse getESMapping(String indexName, String mappingTypeName) throws IOException {
+        final HttpGet httpGet = new HttpGet(indexName+"/_mapping/"+mappingTypeName);
+        return httpClient.execute(host, httpGet);
+    }
+
+    private String retrieveValueFromJSON(JSONObject json, String ... hierarchy){
+
+        for(int i=0; i<hierarchy.length; i++){
+            if(i+1==hierarchy.length){
+                return json.get(hierarchy[i]).toString();
+            }
+            json = (JSONObject) json.get(hierarchy[i]);
+        }
+
+        return null;
+    }
+
+    private boolean indexExists(String name) throws IOException {
+        final CloseableHttpResponse response = httpClient.execute(host, new HttpHead(name));
+        final boolean exists = response.getStatusLine().getStatusCode() == 200;
+        IOUtils.closeQuietly(response);
+        return exists;
+    }
+
 }

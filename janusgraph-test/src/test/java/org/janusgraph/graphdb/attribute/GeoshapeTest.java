@@ -17,11 +17,11 @@ package org.janusgraph.graphdb.attribute;
 import org.locationtech.spatial4j.context.jts.JtsSpatialContext;
 import org.janusgraph.core.attribute.Geoshape;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.LinearRing;
-import com.vividsolutions.jts.geom.Polygon;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.Polygon;
 
 import org.apache.tinkerpop.shaded.jackson.databind.ObjectMapper;
 import org.apache.tinkerpop.shaded.jackson.databind.module.SimpleModule;
@@ -59,7 +59,7 @@ public class GeoshapeTest {
         for (int i=0;i<50;i++) {
             Geoshape point = Geoshape.point(i,i);
             Geoshape line = Geoshape.line(Arrays.asList(new double[][] {{i-1,i-1},{i,i},{i+1,i+1}}));
-            Geoshape polygon = Geoshape.polygon(Arrays.asList(new double[][] {{i-1,i-1},{i,i-1},{i+1,i-i},{i+1,i+1},{i-1,i+1},{i-1,i-1}}));
+            Geoshape polygon = Geoshape.polygon(Arrays.asList(new double[][] {{i-1,i-1},{i,i-1},{i+1,0},{i+1,i+1},{i-1,i+1},{i-1,i-1}}));
             Geoshape circle = Geoshape.circle(i,i,point.getPoint().distance(Geoshape.point(i,i).getPoint())+10);
             assertTrue(circle.intersect(point));
             assertTrue(point.intersect(circle));
@@ -133,7 +133,7 @@ public class GeoshapeTest {
 
 
     @Test(expected = IllegalArgumentException.class)
-    public void testGeoJsonPointUnparseable() throws IOException {
+    public void testGeoJsonPointNotParseable() throws IOException {
         Geoshape.GeoshapeSerializer s = new Geoshape.GeoshapeSerializer();
         Map json = new ObjectMapper().readValue("{\n" +
                 "  \"type\": \"Feature\",\n" +
@@ -330,28 +330,27 @@ public class GeoshapeTest {
         assertEquals(Geoshape.point(10.5, 20.5), s.convert(json));
     }
 
-
     @Test
     public void testGeoJsonSerialization() throws IOException {
         SimpleModule module = new SimpleModule();
-        module.addSerializer(new Geoshape.GeoshapeGsonSerializerV1d0());
+        module.addSerializer(new Geoshape.GeoshapeGsonSerializerV2d0());
         final ObjectMapper om = new ObjectMapper();
         om.registerModule(module);
         JtsSpatialContext context = (JtsSpatialContext) Geoshape.getSpatialContext();
         assertEquals("{\"type\":\"Point\",\"coordinates\":[20.5,10.5]}", om.writeValueAsString(Geoshape.point(10.5, 20.5)));
-        assertEquals("{\"type\":\"Polygon\",\"coordinates\": [[[20.5,10.5],[20.5,12.5],[22.5,12.5],[22.5,10.5],[20.5,10.5]]]}", om.writeValueAsString(Geoshape.box(10.5, 20.5, 12.5, 22.5)));
+        assertEquals("{\"type\":\"Polygon\",\"coordinates\":[[[20.5,10.5],[20.5,12.5],[22.5,12.5],[22.5,10.5],[20.5,10.5]]]}", om.writeValueAsString(Geoshape.box(10.5, 20.5, 12.5, 22.5)));
         assertEquals("{\"type\":\"Circle\",\"coordinates\":[20.5,10.5],\"radius\":30.5,\"properties\":{\"radius_units\":\"km\"}}", om.writeValueAsString(Geoshape.circle(10.5, 20.5, 30.5)));
         assertEquals("{\"type\":\"LineString\",\"coordinates\":[[20.5,10.5],[22.5,10.5],[22.5,12.5]]}", om.writeValueAsString(Geoshape.line(Arrays.asList(new double[][] {{20.5,10.5},{22.5,10.5},{22.5,12.5}}))));
         assertEquals("{\"type\":\"Polygon\",\"coordinates\":[[[20.5,10.5],[21.75,8],[22.5,10.5],[25,11.75],[22.5,12.5],[21,15],[20.5,12.5],[18,11.75],[20.5,10.5]]]}",
             om.writeValueAsString(Geoshape.polygon(Arrays.asList(new double[][] {{20.5,10.5},{21.75,8},{22.5,10.5},{25,11.75},{22.5,12.5},{21,15},{20.5,12.5},{18,11.75},{20.5,10.5}}))));
         assertEquals("{\"type\":\"MultiPoint\",\"coordinates\":[[100,0],[101,1]]}",
-            om.writeValueAsString(Geoshape.geoshape(context.makeShape(GF.createMultiPoint(new Coordinate[] {new Coordinate(100,0), new Coordinate(101,1)})))));
+            om.writeValueAsString(Geoshape.geoshape(context.getShapeFactory().makeShapeFromGeometry(GF.createMultiPoint(new Coordinate[] {new Coordinate(100,0), new Coordinate(101,1)})))));
         assertEquals("{\"type\":\"MultiLineString\",\"coordinates\":[[[100,0],[101,1]],[[102,2],[103,3]]]}",
-            om.writeValueAsString(Geoshape.geoshape(context.makeShape(GF.createMultiLineString(new LineString[] {
+            om.writeValueAsString(Geoshape.geoshape(context.getShapeFactory().makeShapeFromGeometry(GF.createMultiLineString(new LineString[] {
                 GF.createLineString(new Coordinate[] {new Coordinate(100,0), new Coordinate(101,1)}),
                 GF.createLineString(new Coordinate[] {new Coordinate(102,2), new Coordinate(103,3)})})))));
         assertEquals("{\"type\":\"MultiPolygon\",\"coordinates\":[[[[102,2],[103,2],[103,3],[102,3],[102,2]]],[[[100,0],[101,0],[101,1],[100,1],[100,0]],[[100.2,0.2],[100.8,0.2],[100.8,0.8],[100.2,0.8],[100.2,0.2]]]]}",
-            om.writeValueAsString(Geoshape.geoshape(context.makeShape(GF.createMultiPolygon(new Polygon[] {
+            om.writeValueAsString(Geoshape.geoshape(context.getShapeFactory().makeShapeFromGeometry(GF.createMultiPolygon(new Polygon[] {
                 GF.createPolygon(new Coordinate[] {new Coordinate(102,2), new Coordinate(103,2), new Coordinate(103,3), new Coordinate(102,3), new Coordinate(102,2)}),
                 GF.createPolygon(GF.createLinearRing(new Coordinate[] {new Coordinate(100,0), new Coordinate(101,0), new Coordinate(101,1), new Coordinate(100,1), new Coordinate(100,0)}),
                     new LinearRing[] { GF.createLinearRing(new Coordinate[] {new Coordinate(100.2,0.2), new Coordinate(100.8,0.2),

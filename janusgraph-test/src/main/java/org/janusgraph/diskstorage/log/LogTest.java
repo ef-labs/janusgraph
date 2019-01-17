@@ -85,12 +85,12 @@ public abstract class LogTest {
 
     @Test
     public void smallSendReceiveSerial() throws Exception {
-        simpleSendReceive(100, 50, TIMEOUT_MS);
+        simpleSendReceive(100, 50);
     }
 
     @Test
     public void mediumSendReceiveSerial() throws Exception {
-        simpleSendReceive(2000,1, TIMEOUT_MS);
+        simpleSendReceive(2000,1);
     }
 
     @Test
@@ -192,7 +192,7 @@ public abstract class LogTest {
         final int rounds = 32;
 
         StoringReader reader = new StoringReader(rounds);
-        List<StaticBuffer> expected = new ArrayList<StaticBuffer>(rounds);
+        final List<StaticBuffer> expected = new ArrayList<>(rounds);
 
         Log l = manager.openLog("fuzz");
         l.registerReader(ReadMarker.fromNow(),reader);
@@ -211,7 +211,7 @@ public abstract class LogTest {
         }
         reader.await(TIMEOUT_MS);
         assertEquals(rounds, reader.msgCount);
-        assertEquals(expected, reader.msgs);
+        assertEquals(expected, reader.messages);
     }
 
     @Test
@@ -222,11 +222,11 @@ public abstract class LogTest {
         try {
             l1.registerReader(ReadMarker.fromIdentifierOrNow("other"));
             fail();
-        } catch (IllegalArgumentException e) {}
+        } catch (IllegalArgumentException ignored) {}
         try {
             l1.registerReader(ReadMarker.fromTime(Instant.now().minusMillis(100)));
             fail();
-        } catch (IllegalArgumentException e) {}
+        } catch (IllegalArgumentException ignored) {}
         l1.registerReader(ReadMarker.fromNow(), new StoringReader(2));
     }
 
@@ -252,8 +252,8 @@ public abstract class LogTest {
         assertEquals(3, reader2.totalValue.get());
     }
 
-    protected void simpleSendReceive(int numMessages, int delayMS, long timeoutMS) throws Exception {
-        sendReceive(1, numMessages, delayMS, true, timeoutMS);
+    protected void simpleSendReceive(int numMessages, int delayMS) throws Exception {
+        sendReceive(1, numMessages, delayMS, true, LogTest.TIMEOUT_MS);
     }
 
     public void sendReceive(int readers, int numMessages, int delayMS, boolean expectMessageOrder, long timeoutMS) throws Exception {
@@ -302,6 +302,9 @@ public abstract class LogTest {
             processMessage(message);
             latch.countDown();
         }
+
+        @Override
+        public void updateState() {}
 
         /**
          * Subclasses can override this method to perform additional processing on the message.
@@ -359,7 +362,7 @@ public abstract class LogTest {
 
     protected static class StoringReader extends LatchMessageReader {
 
-        private List<StaticBuffer> msgs = new ArrayList<>(64);
+        private final List<StaticBuffer> messages = new ArrayList<>(64);
         private volatile int msgCount = 0;
 
         StoringReader(int expectedMessageCount) {
@@ -369,7 +372,7 @@ public abstract class LogTest {
         @Override
         public void processMessage(Message message) {
             StaticBuffer content = message.getContent();
-            msgs.add(content);
+            messages.add(content);
             msgCount++;
         }
     }

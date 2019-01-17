@@ -16,6 +16,7 @@ package org.janusgraph.core;
 
 import org.janusgraph.graphdb.management.ConfigurationManagementGraph;
 import org.janusgraph.graphdb.management.JanusGraphManager;
+import org.janusgraph.graphdb.database.management.ManagementSystem;
 import org.janusgraph.graphdb.database.StandardJanusGraph;
 import org.janusgraph.graphdb.configuration.GraphDatabaseConfiguration;
 import org.janusgraph.diskstorage.BackendException;
@@ -25,9 +26,8 @@ import static org.janusgraph.graphdb.management.JanusGraphManager.JANUS_GRAPH_MA
 
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.MapConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
+
 import com.google.common.base.Preconditions;
 
 import java.util.Map;
@@ -35,7 +35,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class provides static methods to: 1) create graph references denoted by a
@@ -55,8 +56,11 @@ import java.io.IOException;
  */
 public class ConfiguredGraphFactory {
 
+    private static final Logger log =
+    LoggerFactory.getLogger(ConfiguredGraphFactory.class);
+
     /**
-     * Creates a {@link JanusGraph} configuration stored in the {@ConfigurationGraphManagament}
+     * Creates a {@link JanusGraph} configuration stored in the {@link ConfigurationManagementGraph}
      * graph and a {@link JanusGraph} graph reference according to the single
      * Template Configuration  previously created by the {@link ConfigurationManagementGraph} API;
      * A configuration for this graph must not already exist, and a Template Configuration must
@@ -125,7 +129,7 @@ public class ConfiguredGraphFactory {
 
     /**
      * Removes the graph corresponding to the supplied graphName
-     * from the {@link JanusGraphManager} {@link Map<String, Graph>} graph reference tracker and
+     * from the {@link JanusGraphManager} graph reference tracker and
      * returns the corresponding Graph, or null if it doesn't exist.
      *
      * @param graphName Graph
@@ -154,7 +158,7 @@ public class ConfiguredGraphFactory {
     public static void drop(String graphName) throws BackendException, ConfigurationManagementGraphNotEnabledException, Exception {
         final StandardJanusGraph graph = (StandardJanusGraph) ConfiguredGraphFactory.close(graphName);
         JanusGraphFactory.drop(graph);
-        ConfigurationManagementGraph.getInstance().removeConfiguration(graphName);
+        removeConfiguration(graphName);
     }
 
     private static ConfigurationManagementGraph getConfigGraphManagementInstance() {
@@ -199,6 +203,14 @@ public class ConfiguredGraphFactory {
      */
     public static void updateConfiguration(final String graphName, final Configuration config) {
         final ConfigurationManagementGraph configManagementGraph = getConfigGraphManagementInstance();
+        try {
+            final JanusGraph graph = open(graphName);
+            removeGraphFromCache(graph);
+        } catch (Exception e) {
+            // cannot open graph, do nothing
+            log.error(String.format("Failed to open graph %s with the following error:\n %s.\n" +
+            "Thus, it and its traversal will not be bound on this server.", graphName, e.toString()));
+        }
         configManagementGraph.updateConfiguration(graphName, config);
     }
 
@@ -219,7 +231,24 @@ public class ConfiguredGraphFactory {
      */
     public static void removeConfiguration(final String graphName) {
         final ConfigurationManagementGraph configManagementGraph = getConfigGraphManagementInstance();
+        try {
+            final JanusGraph graph = open(graphName);
+            removeGraphFromCache(graph);
+        } catch (Exception e) {
+            // cannot open graph, do nothing
+            log.error(String.format("Failed to open graph %s with the following error:\n %s.\n" +
+            "Thus, it and its traversal will not be bound on this server.", graphName, e.toString()));
+        }
         configManagementGraph.removeConfiguration(graphName);
+    }
+
+    private static void removeGraphFromCache(final JanusGraph graph) {
+        final JanusGraphManager jgm = JanusGraphManagerUtility.getInstance();
+        Preconditions.checkState(jgm != null, JANUS_GRAPH_MANAGER_EXPECTED_STATE_MSG);
+        jgm.removeGraph(((StandardJanusGraph) graph).getGraphName());
+        final ManagementSystem mgmt = (ManagementSystem) graph.openManagement();
+        mgmt.evictGraphFromCache();
+        mgmt.commit();
     }
 
     /**
@@ -234,7 +263,7 @@ public class ConfiguredGraphFactory {
      * Get Configuration according to supplied graphName mapped to a specific
      * {@link Graph}; if does not exist, return null.
      *
-     * @return Map<String, Object>
+     * @return Map&lt;String, Object&gt;
      */
     public static Map<String, Object> getConfiguration(final String configName) {
         final ConfigurationManagementGraph configManagementGraph = getConfigGraphManagementInstance();
@@ -245,7 +274,7 @@ public class ConfiguredGraphFactory {
      * Get a list of all Configurations, excluding the template configuration; if none exist,
      * return an empty list
      *
-     * @return List<Map<String, Object>>
+     * @return List&lt;Map&lt;String, Object&gt;&gt;
      */
     public static List<Map<String, Object>> getConfigurations() {
         final ConfigurationManagementGraph configManagementGraph = getConfigGraphManagementInstance();
@@ -255,7 +284,7 @@ public class ConfiguredGraphFactory {
     /**
      * Get template configuration if exists, else return null.
      *
-     * @return Map<String, Object>
+     * @return Map&lt;String, Object&gt;
      */
     public static Map<String, Object> getTemplateConfiguration() {
         final ConfigurationManagementGraph configManagementGraph = getConfigGraphManagementInstance();
